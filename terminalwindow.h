@@ -43,6 +43,7 @@ private:
     QAction *m_paste;
     QAction *m_close;
     QWidget *m_parent;
+    QString m_currentPath;
 };
 
 class TerminalWindow : public Core::IOutputPane

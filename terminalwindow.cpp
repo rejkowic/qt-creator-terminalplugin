@@ -26,25 +26,35 @@ namespace Internal {
 TerminalContainer::TerminalContainer(QWidget *parent)
     : QWidget(parent)
     , m_parent(parent)
+    , m_currentPath(QDir::currentPath())
 {
     setContextMenuPolicy(Qt::CustomContextMenu);
     connect(this, &QWidget::customContextMenuRequested,
             this, &TerminalContainer::contextMenuRequested);
 
     m_copy = new QAction("Copy", this);
-    m_copy->setShortcut(QKeySequence::Copy);
+//    m_copy->setShortcut(QKeySequence::Copy);
     connect(m_copy, &QAction::triggered, this, &TerminalContainer::copyInvoked);
     addAction(m_copy);
 
     m_paste = new QAction("Paste", this);
-    m_paste->setShortcut(QKeySequence::Paste);
+//    m_paste->setShortcut(QKeySequence::Paste);
     connect(m_paste, &QAction::triggered, this, &TerminalContainer::pasteInvoked);
     addAction(m_paste);
 
-    m_close = new QAction("Close", this);
-    m_close->setShortcut(QKeySequence::Close);
+    m_close = new QAction("Restart", this);
+//    m_close->setShortcut(QKeySequence::Close);
     connect(m_close, &QAction::triggered, this, &TerminalContainer::closeInvoked);
     addAction(m_close);
+
+    connect(Core::EditorManager::instance(), &Core::EditorManager::cdHere, this, [this](const QString &path)
+    {
+        QDir d(path);	
+	if (!d.exists())
+	    d.cdUp();
+        m_currentPath = d.absolutePath();
+        closeInvoked();
+    });
 
     initializeTerm();
 }
@@ -86,7 +96,7 @@ void TerminalContainer::initializeTerm()
     connect(m_termWidget, &QTermWidget::copyAvailable, this, &TerminalContainer::copyAvailable);
     connect(m_termWidget, &QTermWidget::finished, this, &TerminalContainer::finishedInvoked);
 
-    m_termWidget->setWorkingDirectory(QDir::homePath());
+    m_termWidget->setWorkingDirectory(m_currentPath);
     Utils::Environment env = Utils::Environment::systemEnvironment();
     env.set("TERM_PROGRAM", QString("qtermwidget5"));
     env.set("TERM", QString("xterm-256color"));
@@ -145,6 +155,10 @@ QWidget *TerminalWindow::outputWidget(QWidget *parent)
         m_terminalContainer = new TerminalContainer(parent);
     connect(m_terminalContainer, &TerminalContainer::termInitialized,
             this, &TerminalWindow::termInitialized);
+    connect(Core::EditorManager::instance(), &Core::EditorManager::cdHere, this, [this](const QString &)
+    {
+        showPage(IOutputPane::WithFocus);
+    });
     return m_terminalContainer;
 }
 
