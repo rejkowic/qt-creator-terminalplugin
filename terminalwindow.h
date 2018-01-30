@@ -42,6 +42,7 @@ private:
     QAction *m_copy;
     QAction *m_paste;
     QAction *m_close;
+    QAction *m_build;
     QWidget *m_parent;
     QString m_currentPath;
 };

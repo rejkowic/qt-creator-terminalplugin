@@ -17,6 +17,7 @@
 #include <QIcon>
 #include <QMenu>
 #include <QVBoxLayout>
+#include <projectexplorer/projectmacroexpander.h>
 
 #include <qtermwidget5/qtermwidget.h>
 
@@ -47,11 +48,21 @@ TerminalContainer::TerminalContainer(QWidget *parent)
     connect(m_close, &QAction::triggered, this, &TerminalContainer::closeInvoked);
     addAction(m_close);
 
+    m_build = new QAction("Go to build directory", this);
+    connect(m_build, &QAction::triggered, this, [this]()
+    {
+        Utils::MacroExpander *expander = Utils::globalMacroExpander();
+        QString v = "%{CurrentProject:BuildPath}";
+        m_currentPath = expander->expand(v);
+        closeInvoked();
+    });
+    addAction(m_build);
+
     connect(Core::EditorManager::instance(), &Core::EditorManager::cdHere, this, [this](const QString &path)
     {
-        QDir d(path);	
-	if (!d.exists())
-	    d.cdUp();
+        QDir d(path);
+        if (!d.exists())
+            d.cdUp();
         m_currentPath = d.absolutePath();
         closeInvoked();
     });
@@ -113,6 +124,7 @@ void TerminalContainer::contextMenuRequested(const QPoint &point)
     menu.addAction(m_copy);
     menu.addAction(m_paste);
     menu.addAction(m_close);
+    menu.addAction(m_build);
     menu.exec(globalPos);
 }
 
